@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1400, initial-scale=1.0">
+    <title>Paid Media Dashboard - Final Populated</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --bg-body: #F5F5F5;
+            --bg-card: #FFFFFF;
+            --text-title: #172B4D;
+            --text-body: #42526E;
+            --border: #D1D5DB;
+            --primary: #0052CC;     /* Blue */
+            --secondary: #36B37E;   /* Green */
+            --accent: #6554C0;      /* Purple */
+            --danger: #FF5630;      /* Red */
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-body);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- HEADER --- */
+        .top-bar {
+            background: #fff; padding: 16px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .app-title { font-size: 22px; font-weight: 800; color: var(--text-title); letter-spacing: -0.5px; }
+
+        /* --- FILTERS (POPULATED STYLE) --- */
+        .filter-panel {
+            background: #fff; padding: 12px 24px; border-bottom: 1px solid var(--border);
+            display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-start;
+        }
+        .filter-block {
+            background: #FAFBFC; padding: 10px; border: 1px solid #EBECF0; border-radius: 4px; display: flex; gap: 12px;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-label { font-size: 11px; font-weight: 800; color: #6B778C; text-transform: uppercase; }
+        .filter-select { 
+            padding: 6px 8px; border: 1px solid #C1C7D0; border-radius: 3px; font-size: 13px; min-width: 150px; 
+            color: var(--text-title); font-weight: 500; background: #fff; cursor: pointer;
+        }
+        .filter-select:hover { border-color: var(--primary); }
+
+        /* --- NAVIGATION --- */
+        .nav-tabs { background: #fff; padding: 0 24px; display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-top: 1px; }
+        .tab-btn {
+            background: none; border: none; padding: 16px 20px; font-size: 15px; font-weight: 600; color: var(--text-body);
+            cursor: pointer; border-bottom: 4px solid transparent; transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--primary); background: #EBECF0; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: #DEEBFF; }
+
+        /* --- CONTENT --- */
+        .dashboard-content { flex: 1; padding: 24px; overflow-y: auto; }
+        .section-view { display: none; }
+        .section-view.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- CARDS & CHARTS --- */
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .scorecard {
+            background: var(--bg-card); padding: 24px; border-radius: 6px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .kpi-title { font-size: 13px; color: #6B778C; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+        .kpi-value { font-size: 36px; font-weight: 800; color: var(--text-title); line-height: 1; }
+        .kpi-sub { font-size: 13px; font-weight: 600; margin-top: 8px; display: inline-block; padding: 2px 6px; border-radius: 4px; }
+        .pos { color: #006644; background: #E3FCEF; } .neg { color: #BF2600; background: #FFEBE6; }
+
+        .chart-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .chart-card {
+            background: var(--bg-card); padding: 20px; border-radius: 6px; border: 1px solid var(--border);
+            min-height: 350px; display: flex; flex-direction: column; margin-bottom: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .chart-header {
+            font-size: 16px; font-weight: 700; color: var(--text-title); margin-bottom: 15px;
+            border-bottom: 2px solid #F4F5F7; padding-bottom: 10px; display: flex; justify-content: space-between;
+        }
+        .chart-container { position: relative; flex: 1; height: 100%; width: 100%; min-height: 250px; }
+
+        /* TABLES */
+        .table-container { background: #fff; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; height: 350px; }
+        .table-title { background: #F4F5F7; padding: 12px 20px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--border); color: var(--text-title); }
+        .scroll-box { overflow: auto; flex: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 12px; background: #FAFBFC; border-bottom: 2px solid var(--border); position: sticky; top: 0; color: #5E6C84; font-weight: 700; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid #EBECF0; color: var(--text-title); }
+        tr:hover { background-color: #F4F5F7; }
+
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="app-title">Paid Media Performance Dashboard</div>
+        <div style="font-size:13px; color:#5E6C84; font-weight:500;">Snowflake Data Cloud • Tableau FY26</div>
+    </div>
+
+    <div class="filter-panel">
+        
+        <div class="filter-block">
+            <div class="filter-group">
+                <span class="filter-label">Date Range</span>
+                <select class="filter-select">
+                    <option>This Quarter</option>
+                    <option>Last Quarter</option>
+                    <option>YTD (Fiscal)</option>
+                    <option>Last 30 Days</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-block">
+            <div class="filter-group">
+                <span class="filter-label">Session Campaign</span>
+                <select class="filter-select">
+                    <option>All Campaigns (GA4)</option>
+                    <option>organic_social</option>
+                    <option>paid-display</option>
+                    <option>email-bdi</option>
+                    <option>paid-search</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Session Medium</span>
+                <select class="filter-select">
+                    <option>All Mediums</option>
+                    <option>cpc</option>
+                    <option>organic</option>
+                    <option>referral</option>
+                    <option>email</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-block">
+            <div class="filter-group">
+                <span class="filter-label">Unified Source</span>
+                <select class="filter-select">
+                    <option>All Sources</option>
+                    <option>Google AdWords</option>
+                    <option>LinkedIn</option>
+                    <option>G2.com</option>
+                    <option>Website Direct</option>
+                    <option>Meta/Facebook</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Campaign Name</span>
+                <select class="filter-select">
+                    <option>All SFDC Campaigns</option>
+                    <option>FY26 AMER CAM CPC</option>
+                    <option>FY25 Headless CMS</option>
+                    <option>FY25 Personalization</option>
+                    <option>Competitor US/CA</option>
+                    <option>Branded EMEA</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-block">
+            <div class="filter-group">
+                <span class="filter-label">Job Function</span>
+                <select class="filter-select">
+                    <option>All Functions</option>
+                    <option>Marketing</option>
+                    <option>Engineering</option>
+                    <option>Sales</option>
+                    <option>Operations</option>
+                    <option>IT</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Account Tier</span>
+                <select class="filter-select">
+                    <option>All Tiers</option>
+                    <option>Core ICP</option>
+                    <option>Named Account</option>
+                    <option>Emerging ICP</option>
+                    <option>Non-ICP</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-block">
+            <div class="filter-group">
+                <span class="filter-label">Demand Bucket</span>
+                <select class="filter-select">
+                    <option>All Buckets</option>
+                    <option>Engaged Inbound</option>
+                    <option>Pure Inbound</option>
+                    <option>Assisted Outbound</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Sub Region</span>
+                <select class="filter-select">
+                    <option>All Regions</option>
+                    <option>West</option>
+                    <option>East</option>
+                    <option>EMEA</option>
+                    <option>APAC</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Opp Type</span>
+                <select class="filter-select">
+                    <option>All Types</option>
+                    <option>New Business</option>
+                    <option>Renewal</option>
+                    <option>Upsell</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="activateTab('sec-traffic', this)">1. Account Traffic Share</button>
+        <button class="tab-btn" onclick="activateTab('sec-lead', this)">2. Lead Quality</button>
+        <button class="tab-btn" onclick="activateTab('sec-mqo', this)">3. MQO Analysis</button>
+        <button class="tab-btn" onclick="activateTab('sec-pipe-inf', this)">4. Pipeline Influence</button>
+        <button class="tab-btn" onclick="activateTab('sec-pipe-prog', this)">5. Pipeline Progression</button>
+    </div>
+
+    <div class="dashboard-content">
+
+        <div id="sec-traffic" class="section-view active">
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">Traffic Share by Source (Stacked by Tier)</div>
+                    <div class="chart-container"><canvas id="chartTrafficSource"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">Traffic Share by Medium</div>
+                    <div class="chart-container"><canvas id="chartTrafficMedium"></canvas></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-title">Detail Summary - Target Accounts</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead><tr><th>Medium</th><th>Account Tier</th><th>Account Name</th><th>Views</th></tr></thead>
+                        <tbody>
+                            <tr><td>cpc</td><td>Core ICP</td><td>First Interstate Bank</td><td>24</td></tr>
+                            <tr><td>cpc</td><td>Core ICP</td><td>Healthcare of Ontario</td><td>23</td></tr>
+                            <tr><td>cpc</td><td>Named Account</td><td>Paramount Pictures</td><td>15</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-lead" class="section-view">
+            <div class="kpi-grid">
+                <div class="scorecard"><div class="kpi-title">Total Touches</div><div class="kpi-value">5,798</div></div>
+                <div class="scorecard"><div class="kpi-title">Net New Leads</div><div class="kpi-value">3,296</div></div>
+                <div class="scorecard"><div class="kpi-title">Target Account Touches</div><div class="kpi-value">1,056</div></div>
+            </div>
+            
+            <div style="text-align: center; padding: 40px; color: #888; border: 1px dashed #ccc; margin-bottom: 24px; background: #fff;">
+                <i>Job Function visual removed per stakeholder request.</i>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">Lead Detail Summary</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead><tr><th>Source</th><th>Campaign</th><th>Job Level</th><th>Date</th></tr></thead>
+                        <tbody>
+                            <tr><td>Google AdWords</td><td>Retargeting</td><td>Manager</td><td>Nov 6, 2024</td></tr>
+                            <tr><td>Google AdWords</td><td>Retargeting</td><td>Ind. Contributor</td><td>Nov 8, 2024</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-mqo" class="section-view">
+            <div class="kpi-grid">
+                <div class="scorecard"><div class="kpi-title">Total MQO Influence</div><div class="kpi-value">158 <span class="kpi-sub pos">▲ 12%</span></div></div>
+                <div class="scorecard"><div class="kpi-title">Target MQO Influence</div><div class="kpi-value">112 <span class="kpi-sub neg">▼ 2%</span></div></div>
+                <div class="scorecard"><div class="kpi-title">Avg Days to MQO</div><div class="kpi-value">14.2 Days</div></div>
+            </div>
+            
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">MQO Influence by Source (Trend)</div>
+                    <div class="chart-container"><canvas id="chartMQOTrend"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">MQO by Sub-Region</div>
+                    <div class="chart-container"><canvas id="chartMQORegion"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">MQO by Source & Campaign</div>
+                    <div class="chart-container"><canvas id="chartMQOSourceCampaign"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">Avg Days to MQO per Campaign</div>
+                    <div class="chart-container"><canvas id="chartMQODays"></canvas></div>
+                </div>
+            </div>
+
+             <div class="chart-card" style="height: 300px;">
+                <div class="chart-header">MQO Demand Bucket Share by Source (100% Stacked)</div>
+                <div class="chart-container"><canvas id="chartMQODemandBucket"></canvas></div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">MQOs Detail Summary</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead><tr><th>Account</th><th>Campaign</th><th>Stage</th><th>Date</th></tr></thead>
+                        <tbody>
+                            <tr><td>FASTer Way</td><td>FY25 Headless</td><td>Evaluation</td><td>Jan 27, 2025</td></tr>
+                            <tr><td>Merck & Co</td><td>FY25 Headless</td><td>Closed Lost</td><td>Mar 14, 2025</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-pipe-inf" class="section-view">
+            <div class="kpi-grid">
+                <div class="scorecard"><div class="kpi-title">Pipe Rev (Units)</div><div class="kpi-value">$16.4M (149)</div></div>
+                <div class="scorecard"><div class="kpi-title">Target Rev (Units)</div><div class="kpi-value">$12.3M (107)</div></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">Pipeline Influenced by Source (Trend)</div>
+                <div class="chart-container"><canvas id="chartPipeTrend"></canvas></div>
+            </div>
+
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">Pipeline by Source & Campaign</div>
+                    <div class="chart-container"><canvas id="chartPipeSourceCampaign"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">Avg Days to Pipe per Campaign</div>
+                    <div class="chart-container"><canvas id="chartPipeDays"></canvas></div>
+                </div>
+            </div>
+
+             <div class="chart-grid-3">
+                <div class="chart-card">
+                    <div class="chart-header">By Ad Group</div>
+                    <div class="chart-container"><canvas id="chartAdGroup"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">By Keyword</div>
+                    <div class="chart-container"><canvas id="chartKeyword"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">By Form URL</div>
+                    <div class="chart-container"><canvas id="chartFormURL"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">By Sub-Region</div>
+                    <div class="chart-container"><canvas id="chartPipeRegion"></canvas></div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">Pipeline Detail Summary</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead><tr><th>Account</th><th>Campaign</th><th>Piped Amount</th></tr></thead>
+                        <tbody>
+                            <tr><td>Procter & Gamble</td><td>FY25 Headless</td><td>$362,367</td></tr>
+                            <tr><td>Chevron</td><td>FY26 AMER CAM</td><td>$300,000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="sec-pipe-prog" class="section-view">
+            <div class="kpi-grid">
+                 <div class="scorecard"><div class="kpi-title">Pipe Progressed (Bookings)</div><div class="kpi-value">$7.4M <span class="kpi-sub pos">▲ 10%</span></div></div>
+                <div class="scorecard"><div class="kpi-title">Target Pipeline Progressed</div><div class="kpi-value">$6.0M <span class="kpi-sub neg">▼ 1%</span></div></div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">Pipeline Progression (Stage Conversion)</div>
+                <div class="chart-container"><canvas id="chartProgression"></canvas></div>
+            </div>
+
+            <div class="chart-grid-2">
+                <div class="chart-card">
+                    <div class="chart-header">Progressed by Source & Campaign</div>
+                    <div class="chart-container"><canvas id="chartProgSourceCampaign"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">Progressed by Sub-Region</div>
+                    <div class="chart-container"><canvas id="chartProgSubRegion"></canvas></div>
+                </div>
+            </div>
+
+            <div class="chart-grid-3">
+                <div class="chart-card">
+                    <div class="chart-header">By Ad Group</div>
+                    <div class="chart-container"><canvas id="chartProgAdGroup"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">By Keyword</div>
+                    <div class="chart-container"><canvas id="chartProgKeyword"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">By Form URL</div>
+                    <div class="chart-container"><canvas id="chartProgFormURL"></canvas></div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-title">Won Opportunities Detail</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead><tr><th>Account</th><th>Campaign</th><th>Bookings</th></tr></thead>
+                        <tbody>
+                            <tr><td>United Airlines</td><td>FY26 AMER CAM</td><td>$1,114,400</td></tr>
+                            <tr><td>Five Below</td><td>FY26 EMEA CAM</td><td>$785,000</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const renderedCharts = {};
+
+        function activateTab(sectionId, btn) {
+            document.querySelectorAll('.section-view').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            btn.classList.add('active');
+            renderChartsForSection(sectionId);
+        }
+
+        function renderChartsForSection(sectionId) {
+            if (renderedCharts[sectionId]) return;
+            renderedCharts[sectionId] = true;
+
+            const commonOptions = { responsive: true, maintainAspectRatio: false };
+            const colors = { blue: '#0052CC', green: '#36B37E', red: '#FF5630', purple: '#6554C0', orange: '#FF991F' };
+
+            // 1. TRAFFIC
+            if (sectionId === 'sec-traffic') {
+                new Chart(document.getElementById('chartTrafficSource'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Google', 'LinkedIn', 'Meta', 'G2', 'Direct'],
+                        datasets: [
+                            { label: 'Core ICP', data: [450, 200, 150, 50, 300], backgroundColor: colors.blue },
+                            { label: 'Named Account', data: [300, 150, 100, 30, 200], backgroundColor: colors.green },
+                            { label: 'Emerging', data: [200, 100, 80, 20, 150], backgroundColor: colors.red }
+                        ]
+                    },
+                    options: { ...commonOptions, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                new Chart(document.getElementById('chartTrafficMedium'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['CPC', 'Organic', 'Referral', 'Email'],
+                        datasets: [{ label: 'Sessions', data: [12000, 8500, 3200, 1500], backgroundColor: colors.purple }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // 2. LEAD (Chart Removed)
+
+            // 3. MQO
+            if (sectionId === 'sec-mqo') {
+                new Chart(document.getElementById('chartMQOTrend'), {
+                    type: 'line',
+                    data: { labels: ['Jan', 'Feb', 'Mar', 'Apr'], datasets: [{ label: 'Google', data: [20, 35, 30, 42], borderColor: colors.blue, tension:0.3 }, { label: 'LinkedIn', data: [10, 15, 12, 18], borderColor: colors.green, tension:0.3 }] },
+                    options: commonOptions
+                });
+                new Chart(document.getElementById('chartMQORegion'), {
+                    type: 'doughnut',
+                    data: { labels: ['West', 'East', 'EMEA', 'APAC'], datasets: [{ data: [40, 30, 20, 10], backgroundColor: [colors.blue, colors.green, colors.red, colors.purple] }] },
+                    options: { ...commonOptions, plugins: { legend: { position: 'right' } } }
+                });
+                new Chart(document.getElementById('chartMQOSourceCampaign'), {
+                    type: 'bar',
+                    data: { labels: ['Google', 'LinkedIn'], datasets: [{ label: 'FY26 AMER', data: [40, 10], backgroundColor: colors.blue }, { label: 'Headless', data: [30, 20], backgroundColor: colors.green }] },
+                    options: { ...commonOptions, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                new Chart(document.getElementById('chartMQODays'), {
+                    type: 'bar',
+                    data: { labels: ['Branded', 'FY26 AMER', 'Competitor'], datasets: [{ label: 'Days', data: [5, 12, 18], backgroundColor: colors.purple }] },
+                    options: commonOptions
+                });
+                 new Chart(document.getElementById('chartMQODemandBucket'), {
+                    type: 'bar',
+                    data: { labels: ['Google', 'LinkedIn'], datasets: [{ label: 'Engaged', data: [60, 40], backgroundColor: colors.blue }, { label: 'Pure Inbound', data: [40, 60], backgroundColor: colors.green }] },
+                    options: { ...commonOptions, indexAxis: 'y', scales: { x: { stacked: true, max:100 }, y: { stacked: true } } }
+                });
+            }
+
+            // 4. PIPELINE
+            if (sectionId === 'sec-pipe-inf') {
+                new Chart(document.getElementById('chartPipeTrend'), {
+                    type: 'line',
+                    data: { labels: ['Jan', 'Feb', 'Mar'], datasets: [{ label: 'Pipeline $', data: [500000, 750000, 1200000], borderColor: colors.blue, fill: true, backgroundColor: 'rgba(0,82,204,0.1)' }] },
+                    options: commonOptions
+                });
+                new Chart(document.getElementById('chartPipeSourceCampaign'), {
+                    type: 'bar',
+                    data: { labels: ['Google', 'LinkedIn'], datasets: [{ label: 'FY26 AMER', data: [1.2, 0.4], backgroundColor: colors.blue }, { label: 'Headless', data: [0.8, 0.2], backgroundColor: colors.green }] },
+                    options: { ...commonOptions, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                new Chart(document.getElementById('chartPipeDays'), {
+                     type: 'bar',
+                     data: { labels: ['Branded', 'FY26 AMER', 'Competitor'], datasets: [{ label: 'Avg Days', data: [25, 45, 60], backgroundColor: colors.orange }] },
+                     options: commonOptions
+                });
+                new Chart(document.getElementById('chartAdGroup'), {
+                    type: 'bar', data: { labels: ['Brand', 'Competitor'], datasets: [{ data: [50, 30], backgroundColor: colors.blue }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+                new Chart(document.getElementById('chartKeyword'), {
+                    type: 'bar', data: { labels: ['headless', 'dxp'], datasets: [{ data: [45, 35], backgroundColor: colors.green }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+                new Chart(document.getElementById('chartFormURL'), {
+                    type: 'bar', indexAxis: 'y', data: { labels: ['/demo', '/pricing'], datasets: [{ data: [120, 80], backgroundColor: colors.red }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+                new Chart(document.getElementById('chartPipeRegion'), {
+                    type: 'pie', data: { labels: ['West', 'East'], datasets: [{ data: [60, 40], backgroundColor: [colors.blue, colors.green] }] }, options: commonOptions
+                });
+            }
+
+            // 5. PROGRESSION
+            if (sectionId === 'sec-pipe-prog') {
+                new Chart(document.getElementById('chartProgression'), {
+                    type: 'bar',
+                    data: { labels: ['Discovery', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won'], datasets: [{ label: 'Volume', data: [150, 100, 60, 20, 10], backgroundColor: colors.green }] },
+                    options: commonOptions
+                });
+                new Chart(document.getElementById('chartProgSourceCampaign'), {
+                     type: 'bar',
+                     data: { labels: ['Google', 'LinkedIn'], datasets: [{ label: 'FY26 AMER', data: [0.5, 0.1], backgroundColor: colors.blue }, { label: 'Headless', data: [0.3, 0.1], backgroundColor: colors.green }] },
+                     options: { ...commonOptions, scales: { x: { stacked: true }, y: { stacked: true } } }
+                });
+                 new Chart(document.getElementById('chartProgSubRegion'), {
+                    type: 'pie', data: { labels: ['West', 'East'], datasets: [{ data: [70, 30], backgroundColor: [colors.blue, colors.green] }] }, options: commonOptions
+                });
+                new Chart(document.getElementById('chartProgAdGroup'), {
+                    type: 'bar', data: { labels: ['Brand', 'Competitor'], datasets: [{ data: [20, 10], backgroundColor: colors.blue }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+                new Chart(document.getElementById('chartProgKeyword'), {
+                    type: 'bar', data: { labels: ['headless', 'dxp'], datasets: [{ data: [15, 12], backgroundColor: colors.green }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+                new Chart(document.getElementById('chartProgFormURL'), {
+                    type: 'bar', indexAxis: 'y', data: { labels: ['/demo', '/pricing'], datasets: [{ data: [40, 20], backgroundColor: colors.red }] }, options: { ...commonOptions, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        // Initialize First Tab
+        document.addEventListener('DOMContentLoaded', () => {
+            activateTab('sec-traffic', document.querySelector('.tab-btn.active'));
+        });
+
+    </script>
+</body>
+</html>
